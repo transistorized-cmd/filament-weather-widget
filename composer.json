@@ -1,0 +1,25 @@
+{
+    "name": "transistorizedcmd/filament-weather-widget",
+    "description": "A weather widget for Filament admin panels",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Transistorizedcmd\\FilamentWeatherWidget\\": "src/"
+        }
+    },
+    "require": {
+        "php": "^8.2",
+        "filament/filament": "^3.0",
+        "illuminate/support": "^11.0",
+        "spatie/laravel-package-tools": "^1.16",
+        "guzzlehttp/guzzle": "^7.0"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Transistorizedcmd\\FilamentWeatherWidget\\WeatherWidgetServiceProvider"
+            ]
+        }
+    }
+}
