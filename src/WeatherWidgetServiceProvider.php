@@ -3,11 +3,13 @@
 namespace Transistorizedcmd\FilamentWeatherWidget;
 
 use Filament\Facades\Filament;
+use GuzzleHttp\Client;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 use Transistorizedcmd\FilamentWeatherWidget\Widgets\WeatherWidget;
 use Transistorizedcmd\FilamentWeatherWidget\Services\WeatherServiceManager;
 use Transistorizedcmd\FilamentWeatherWidget\Services\WeatherAPIService;
+use Transistorizedcmd\FilamentWeatherWidget\Services\WeatherSettingsManager;
 
 class WeatherWidgetServiceProvider extends PackageServiceProvider
 {
@@ -31,13 +33,17 @@ class WeatherWidgetServiceProvider extends PackageServiceProvider
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'filament-weather-widget');
 
         $this->app->singleton(WeatherServiceManager::class, function ($app) {
-            $defaultService = config('filament-weather-widget.service', 'weatherapi');
-            $manager = new WeatherServiceManager($defaultService);
-            
-            $apiKey = config('filament-weather-widget.weatherapi.key');
-            $manager->addService('weatherapi', new WeatherAPIService($apiKey));
-
+            $manager = new WeatherServiceManager();
+            $manager->addService('weatherapi', $app->make(WeatherAPIService::class));
             return $manager;
+        });
+
+        $this->app->singleton(WeatherSettingsManager::class, function ($app) {
+            return new WeatherSettingsManager();
+        });
+
+        $this->app->bind(WeatherAPIService::class, function ($app) {
+            return new WeatherAPIService(new Client());
         });
     }
 
