@@ -7,10 +7,13 @@ use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
+use Filament\Support\Facades\FilamentAsset;
+use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Log;
+use Transistorizedcmd\FilamentWeatherWidget\Services\LocationService;
 use Transistorizedcmd\FilamentWeatherWidget\Services\WeatherServiceManager;
 use Transistorizedcmd\FilamentWeatherWidget\Services\WeatherSettingsManager;
 
@@ -24,10 +27,23 @@ class WeatherWidget extends Widget implements HasForms
     public $weather;
     public string $errorMessage = '';
     
-    protected int | string | array $columnSpan = 'full';
+    protected int | string | array $columnSpan = '1';
 
     protected $weatherData = null;
+    protected LocationService $locationService;
+    protected WeatherServiceManager $weatherServiceManager;
 
+    protected $listeners = [
+        'updateGeolocation' => 'updateGeolocation',
+        'useIpLocation' => 'useIpLocation'
+    ];
+    
+    public function boot(LocationService $locationService, WeatherServiceManager $weatherServiceManager)
+    {
+        $this->locationService = $locationService;
+        $this->weatherServiceManager = $weatherServiceManager;
+    }
+    
     public function mount(): void
     {
         $this->form->fill($this->getSettingsManager()->getSettings());
@@ -87,12 +103,12 @@ class WeatherWidget extends Widget implements HasForms
 
                 return ['success' => true, 'data' => $this->weatherData];
             }
-
+            $settings = $this->getSettings();
             // If no cached data, detect location and fetch weather
-            $weatherData = $this->fetchWeatherData();
+            $weatherData = $this->fetchWeatherData($settings);
 
             if ($weatherData) {
-                $this->weatherData = $this->processWeatherData($weatherData);
+                $this->weatherData = $weatherData;
                 // Cache the new data
                 Cache::put($cacheKey, $this->weatherData, now()->addMinutes(30));
 
@@ -107,23 +123,17 @@ class WeatherWidget extends Widget implements HasForms
         }
     }
 
-    protected function fetchWeatherData()
+    protected function fetchWeatherData(array $settings)
     {
-        $weatherService = $this->getWeatherService();
-        $settings = $this->getSettings();
+        $location = $this->locationService->getLocation($settings);
+        $weatherService = $this->weatherServiceManager->getService($settings['service'] ?? 'weatherapi');
+        $weatherData = $weatherService->getCurrentWeather($location, $settings);
 
-        if ($weatherService === 'weatherapi') {
-            if ($settings['location_mode'] === 'automatic') {
-                // Use WeatherAPI with IP-based location
-                return $this->getWeatherAPIData('auto:ip');
-            } else {
-                // Use the manually set location
-                return $this->getWeatherAPIData($settings['location']);
-            }
-        } else {
-            $location = $this->getLocationFallback();
-            return $this->getWeatherAPIData($location);
+        if (!isset($weatherData['location'])) {
+            throw new \Exception(__('filament-weather-widget::weather.errors.invalid_location'));
         }
+
+        return $weatherData;
     }
 
     protected function loadWeather(): void
@@ -142,9 +152,9 @@ class WeatherWidget extends Widget implements HasForms
 
         try {
             $this->weather = Cache::remember($cacheKey, 1800, function () use ($settings) {
-                $query = $settings['location_mode'] === 'automatic' ? 'auto:ip' : $settings['location'];
-                $weatherService = app(WeatherServiceManager::class)->getService($settings['service'] ?? 'weatherapi');
-                $weatherData = $weatherService->getCurrentWeather($query, $settings);
+                $location = $this->locationService->getLocation($settings);
+                $weatherService = $this->weatherServiceManager->getService($settings['service'] ?? 'weatherapi');
+                $weatherData = $weatherService->getCurrentWeather($location, $settings);
                 
                 if (!isset($weatherData['location'])) {
                     throw new \Exception(__('filament-weather-widget::weather.errors.invalid_location'));
@@ -172,43 +182,11 @@ class WeatherWidget extends Widget implements HasForms
         return Config::get('filament-weather-widget.service', 'weatherapi');
     }
 
-    protected function getLanguageCode(): string
-    {
-        $locale = app()->getLocale();
-        
-        // WeatherAPI supported languages
-        $supportedLanguages = [
-            'ar', 'bn', 'bg', 'zh', 'zh_tw', 'cs', 'da', 'nl', 'fi', 'fr', 'de', 'el', 
-            'hi', 'hu', 'it', 'ja', 'jv', 'ko', 'zh_cmn', 'mr', 'pl', 'pt', 'pa', 'ro', 
-            'ru', 'sr', 'si', 'sk', 'es', 'sv', 'ta', 'te', 'tr', 'uk', 'ur', 'vi', 'zh_wuu', 
-            'zh_hsn', 'zh_yue', 'zu'
-        ];
-
-        // Check if the full locale is supported
-        if (in_array($locale, $supportedLanguages)) {
-            return $locale;
-        }
-
-        // If not, check if it's in the form xx_XX and try to match the first part
-        $parts = explode('_', $locale);
-        if (count($parts) > 1) {
-            $languageCode = $parts[0];
-            
-            if (in_array($languageCode, $supportedLanguages)) {
-                return $languageCode;
-            }
-        }
-        
-        // If no match found, default to English
-        return 'en';
-    }
-
     protected function clearWeatherCache(): void
     {
         $userId = Auth::id() ?? 'guest';
         $currentLocale = app()->getLocale();
         Cache::forget("weather_user_{$userId}_{$currentLocale}");
-        Cache::forget("weather_data_{$userId}_{$currentLocale}");
     }
 
     protected function getLocationFallback()
@@ -254,5 +232,34 @@ class WeatherWidget extends Widget implements HasForms
     public static function canView(): bool
     {
         return (new static)->getSettings()['show_weather'];
+    }
+
+    public function updateGeolocation($latitude, $longitude)
+    {
+        $this->locationService->setGeolocation($latitude, $longitude);
+        $this->clearWeatherCache();
+        $this->loadWeather();
+    }
+
+    public function useIpLocation()
+    {
+        $this->locationService->clearGeolocation();
+        $this->clearWeatherCache();
+        $this->loadWeather();
+    }
+
+    protected function getScripts(): array
+    {
+        return [
+            'weather-widget' => asset('js/weather-widget.js'),
+        ];
+    }
+
+    public function render() :View
+    {
+        // Log the scripts that should be loaded
+        Log::info('Scripts to be loaded: ' . json_encode($this->getScripts()));
+
+        return view(static::$view, $this->data);
     }
 }

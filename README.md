@@ -69,6 +69,15 @@ OPENSTREETMAP_URL=https://nominatim.openstreetmap.org/reverse
 OPENSTREETMAP_USER_AGENT=FilamentWeatherWidget/1.0
 ```
 
+4. (Optional) Publish the assets:
+
+```bash
+php artisan vendor:publish --tag="filament-weather-widget-scripts"
+```
+
+This will publish the JavaScript file to `public/vendor/filament-weather-widget/weather-widget.js`. You can then modify this file if you need to customize the widget's JavaScript behavior.
+
+... (rest of the README content) ...
 ## Usage
 
 The widget will be automatically registered with Filament. To display it on your dashboard, add it to your `app/Providers/Filament/AdminPanelProvider.php`:

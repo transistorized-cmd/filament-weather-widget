@@ -3,9 +3,14 @@
 namespace Transistorizedcmd\FilamentWeatherWidget;
 
 use Filament\Facades\Filament;
+use Filament\Support\Assets\AlpineComponent;
+use Filament\Support\Assets\Js;
+use Filament\Support\Facades\FilamentAsset;
 use GuzzleHttp\Client;
+use Illuminate\Support\Facades\Blade;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
+use Transistorizedcmd\FilamentWeatherWidget\Services\LocationService;
 use Transistorizedcmd\FilamentWeatherWidget\Widgets\WeatherWidget;
 use Transistorizedcmd\FilamentWeatherWidget\Services\WeatherServiceManager;
 use Transistorizedcmd\FilamentWeatherWidget\Services\WeatherAPIService;
@@ -21,13 +26,23 @@ class WeatherWidgetServiceProvider extends PackageServiceProvider
             ->name(static::$name)
             ->hasConfigFile()
             ->hasViews()
-            ->hasTranslations();
+            ->hasTranslations()
+            ->hasAssets();
     }
 
     public function packageBooted(): void
     {
         Filament::registerWidgets([
             WeatherWidget::class,
+        ]);
+
+        $this->publishes([
+            __DIR__ . '/../resources/js/weather-widget.js' => public_path('js/vendor/filament-weather-widget/weather-widget.js'),
+        ], 'filament-weather-widget-scripts');
+
+        FilamentAsset::register([
+            Js::make('weather-widget', __DIR__ . '/../resources/js/weather-widget.js')
+                ->loadedOnRequest()
         ]);
 
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'filament-weather-widget');
@@ -45,10 +60,18 @@ class WeatherWidgetServiceProvider extends PackageServiceProvider
         $this->app->bind(WeatherAPIService::class, function ($app) {
             return new WeatherAPIService(new Client());
         });
+
+        $this->app->singleton(LocationService::class, function ($app) {
+            return new LocationService();
+        });
     }
 
     public function packageRegistered(): void
     {
+        FilamentAsset::register([
+            Js::make('weather-widget', __DIR__ . '/../resources/js/weather-widget.js'),
+        ], 'transistorizedcmd/filament-weather-widget');
+
         $this->mergeConfigFrom($this->package->basePath('/../config/filament-weather-widget.php'), 'filament-weather-widget');
 
         config([
