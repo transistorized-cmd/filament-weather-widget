@@ -3,11 +3,9 @@
 namespace Transistorizedcmd\FilamentWeatherWidget;
 
 use Filament\Facades\Filament;
-use Filament\Support\Assets\AlpineComponent;
 use Filament\Support\Assets\Js;
 use Filament\Support\Facades\FilamentAsset;
 use GuzzleHttp\Client;
-use Illuminate\Support\Facades\Blade;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 use Transistorizedcmd\FilamentWeatherWidget\Services\LocationService;
