@@ -23,7 +23,7 @@ The Filament Weather Widget is a Laravel package that integrates seamlessly with
 - Caching for improved performance
 - Multi-language support
 - Supports Dark Mode
-- Uses [OpenStreetMap](https://openstreetmap.org) for geo location
+- Optional browser-based geolocation with IP fallback
 
 ## Requirements
 
@@ -62,13 +62,6 @@ php artisan vendor:publish --tag="filament-weather-widget-views"
 WEATHER_API_KEY=your_api_key_here
 ```
 
-(Optional) Configure OpenStreetMap settings in your `.env` file:
-
-```
-OPENSTREETMAP_URL=https://nominatim.openstreetmap.org/reverse
-OPENSTREETMAP_USER_AGENT=FilamentWeatherWidget/1.0
-```
-
 4. (Optional) Publish the assets:
 
 ```bash
@@ -80,7 +73,7 @@ This will publish the JavaScript file to `public/vendor/filament-weather-widget/
 ... (rest of the README content) ...
 ## Usage
 
-The widget will be automatically registered with Filament. To display it on your dashboard, add it to your `app/Providers/Filament/AdminPanelProvider.php`:
+Register the widget on your Filament panel in `app/Providers/Filament/AdminPanelProvider.php`:
 
 ```php
 use Transistorizedcmd\FilamentWeatherWidget\Widgets\WeatherWidget;
@@ -107,8 +100,7 @@ Edit the `config/filament-weather-widget.php` file to customize the widget:
 - `default_wind_unit`: Default wind speed unit ('kph' or 'mph')
 - `service`: Weather data service to use (default: 'weatherapi')
 - `weatherapi.key`: Your WeatherAPI API key
-- `openstreetmap.url`: URL for OpenStreetMap reverse geocoding service
-- `openstreetmap.user_agent`: User agent string for OpenStreetMap API requests
+- `weatherapi.base_url`: WeatherAPI base URL (default: `https://api.weatherapi.com/v1`)
 
 ## Localization
 

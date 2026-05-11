@@ -8,9 +8,6 @@ return [
     'service' => env('WEATHER_WIDGET_SERVICE', 'weatherapi'),
     'weatherapi' => [
         'key' => env('WEATHER_API_KEY'),
-    ],
-    'openstreetmap' => [
-        'url' => env('OPENSTREETMAP_URL', 'https://nominatim.openstreetmap.org/reverse'),
-        'user_agent' => env('OPENSTREETMAP_USER_AGENT', 'FilamentWeatherWidget/1.0'),
+        'base_url' => env('WEATHER_API_BASE_URL', 'https://api.weatherapi.com/v1'),
     ],
 ];

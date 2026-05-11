@@ -8,10 +8,18 @@
             "Transistorizedcmd\\FilamentWeatherWidget\\": "src/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "Transistorizedcmd\\FilamentWeatherWidget\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit"
+    },
     "require": {
         "php": "^8.2",
-        "filament/filament": "^3.0",
-        "illuminate/support": "^11.0",
+        "filament/filament": "^3.3",
+        "illuminate/support": "^11.0|^12.0",
         "spatie/laravel-package-tools": "^1.16",
         "guzzlehttp/guzzle": "^7.0"
     },
@@ -21,5 +29,9 @@
                 "Transistorizedcmd\\FilamentWeatherWidget\\WeatherWidgetServiceProvider"
             ]
         }
+    },
+    "require-dev": {
+        "orchestra/testbench": "^9.0|^10.0",
+        "phpunit/phpunit": "^11.0"
     }
 }

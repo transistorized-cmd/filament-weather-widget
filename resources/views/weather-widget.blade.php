@@ -1,7 +1,7 @@
 <x-filament::widget>
     <x-filament::card>
         <div
-            x-data="WeatherWidget.init('{{ $this->getSettings()['location_mode'] }}')"
+            x-data="WeatherWidget.init({{ Js::from($this->getSettings()['location_mode']) }})"
             x-init="init"
         >
             <div id="weather-widget-container">

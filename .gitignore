@@ -22,3 +22,10 @@ Homestead.json
 /.vagrant
 .phpunit.result.cache
 .DS_Store
+
+# Test artifacts
+.phpunit.cache/
+.phpunit.result.cache
+
+# Composer lock — this is a library; consumers resolve their own
+composer.lock
