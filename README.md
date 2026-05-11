@@ -27,10 +27,12 @@ The Filament Weather Widget is a Laravel package that integrates seamlessly with
 
 ## Requirements
 
-- PHP 8.2+
-- Laravel 9.0+
-- Filament 3.0+
-- [WeatherAPI](https://www.weatherapi.com) API key
+| Version line | PHP | Laravel | Filament |
+|---|---|---|---|
+| `^2.0` (current) | 8.2+ (8.3+ for Laravel 13) | 11, 12, 13 | 4, 5 |
+| `^1.0` | 8.2+ | 11, 12 | 3.3 |
+
+A [WeatherAPI](https://www.weatherapi.com) API key is required.
 
 ## Installation
 
@@ -40,7 +42,13 @@ The Filament Weather Widget is a Laravel package that integrates seamlessly with
 composer require transistorizedcmd/filament-weather-widget
 ```
 
-2. The package will automatically register its service provider.
+For Filament 3 projects, pin the 1.x line:
+
+```bash
+composer require "transistorizedcmd/filament-weather-widget:^1.0"
+```
+
+2. The package's service provider is auto-registered via Laravel's package discovery.
 
 ## Configuration
 

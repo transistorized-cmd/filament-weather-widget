@@ -1,5 +1,5 @@
-<x-filament::widget>
-    <x-filament::card>
+<x-filament-widgets::widget>
+    <x-filament::section>
         <div
             x-data="WeatherWidget.init({{ Js::from($this->getSettings()['location_mode']) }})"
             x-init="init"
@@ -8,14 +8,10 @@
                 @if($this->getSettings()['show_weather'])
                     @if($weather && empty($errorMessage))
                         <div class="flex items-center justify-between">
-                            <div>
-                                <h2 class="text-lg font-bold">{{ __('filament-weather-widget::weather.widget.title', ['location' => $weather['location']]) }}</h2>
-                            </div>
-                            <x-filament::icon-button
-                                icon="heroicon-o-cog"
-                                x-on:click="$dispatch('open-modal', { id: 'weather-settings' })"
-                                size="sm"
-                            />
+                            <h2 class="text-lg font-bold">
+                                {{ __('filament-weather-widget::weather.widget.title', ['location' => $weather['location']]) }}
+                            </h2>
+                            {{ $this->settingsAction }}
                         </div>
                         <div class="mt-4 flex items-center">
                             <img src="{{ $weather['icon_url'] }}" alt="{{ $weather['condition'] }}" class="w-16 h-16 mr-4">
@@ -24,44 +20,27 @@
                                 <p class="text-l">{{ $weather['condition'] }}</p>
                             </div>
                         </div>
-                        <div class="mt-2 text-sm text-gray-600">
-                            <p>{{ __('filament-weather-widget::weather.widget.humidity') }}: {{ $weather['humidity'] }}% | 
-                            {{ __('filament-weather-widget::weather.widget.wind') }}: {{ $weather['wind_speed'] }} {{ $weather['wind_unit'] }} {{ $weather['wind_direction'] }} | 
-                            {{ __('filament-weather-widget::weather.widget.updated') }}: {{ $weather['updated_at'] }}</p>
+                        <div class="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                            <p>
+                                {{ __('filament-weather-widget::weather.widget.humidity') }}: {{ $weather['humidity'] }}% |
+                                {{ __('filament-weather-widget::weather.widget.wind') }}: {{ $weather['wind_speed'] }} {{ $weather['wind_unit'] }} {{ $weather['wind_direction'] }} |
+                                {{ __('filament-weather-widget::weather.widget.updated') }}: {{ $weather['updated_at'] }}
+                            </p>
                         </div>
                     @else
-                        <p class="text-lg text-red-500">{{ $errorMessage ?: __('filament-weather-widget::weather.errors.unable_to_load') }}</p>
+                        <div class="flex items-center justify-between">
+                            <p class="text-lg text-red-500">{{ $errorMessage ?: __('filament-weather-widget::weather.errors.unable_to_load') }}</p>
+                            {{ $this->settingsAction }}
+                        </div>
                     @endif
                     <p x-show="locationFallbackMessage" x-text="locationFallbackMessage" class="text-yellow-500 mt-2"></p>
                 @else
-                    <p class="text-lg">{{ __('filament-weather-widget::weather.widget.hidden') }}</p>
+                    <div class="flex items-center justify-between">
+                        <p class="text-lg">{{ __('filament-weather-widget::weather.widget.hidden') }}</p>
+                        {{ $this->settingsAction }}
+                    </div>
                 @endif
             </div>
         </div>
-    </x-filament::card>
-
-    <x-filament::modal id="weather-settings">
-        <x-slot name="heading">
-            {{ __('filament-weather-widget::weather.settings.title') }}
-        </x-slot>
-
-        <form wire:submit="saveSettings">
-            {{ $this->form }}
-        
-            <div class="mt-4 flex justify-between">
-                <x-filament::button type="submit" size="sm">
-                    {{ __('filament-weather-widget::weather.settings.save') }}
-                </x-filament::button>
-                <x-filament::button
-                    type="button"
-                    color="danger"
-                    size="sm"
-                    wire:click="resetConfiguration"
-                    wire:confirm="{{ __('filament-weather-widget::weather.settings.reset_confirm') }}"
-                >
-                    {{ __('filament-weather-widget::weather.settings.reset') }}
-                </x-filament::button>
-            </div>
-        </form>
-    </x-filament::modal>
-</x-filament::widget>
+    </x-filament::section>
+</x-filament-widgets::widget>

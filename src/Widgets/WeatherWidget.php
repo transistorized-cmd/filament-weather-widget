@@ -2,14 +2,20 @@
 
 namespace Transistorizedcmd\FilamentWeatherWidget\Widgets;
 
+use Filament\Actions\Action;
+use Filament\Actions\Concerns\InteractsWithActions;
+use Filament\Actions\Contracts\HasActions;
+use Filament\Forms\Components\Radio;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Notifications\Notification;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Widgets\Widget;
-use Filament\Forms;
-use Filament\Forms\Form;
-use Filament\Forms\Concerns\InteractsWithForms;
-use Filament\Forms\Contracts\HasForms;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Livewire\Attributes\On;
 use Transistorizedcmd\FilamentWeatherWidget\Enums\LocationMode;
 use Transistorizedcmd\FilamentWeatherWidget\Enums\TemperatureUnit;
 use Transistorizedcmd\FilamentWeatherWidget\Enums\WindUnit;
@@ -17,13 +23,12 @@ use Transistorizedcmd\FilamentWeatherWidget\Services\LocationService;
 use Transistorizedcmd\FilamentWeatherWidget\Services\WeatherServiceManager;
 use Transistorizedcmd\FilamentWeatherWidget\Services\WeatherSettingsManager;
 
-class WeatherWidget extends Widget implements HasForms
+class WeatherWidget extends Widget implements HasActions
 {
-    use InteractsWithForms;
+    use InteractsWithActions;
 
-    protected static string $view = 'filament-weather-widget::weather-widget';
+    protected string $view = 'filament-weather-widget::weather-widget';
 
-    public ?array $data = [];
     public ?array $weather = null;
     public string $errorMessage = '';
 
@@ -32,44 +37,42 @@ class WeatherWidget extends Widget implements HasForms
     protected LocationService $locationService;
     protected WeatherServiceManager $weatherServiceManager;
 
-    protected $listeners = [
-        'updateGeolocation' => 'updateGeolocation',
-        'useIpLocation' => 'useIpLocation'
-    ];
-    
-    public function boot(LocationService $locationService, WeatherServiceManager $weatherServiceManager)
+    public function boot(LocationService $locationService, WeatherServiceManager $weatherServiceManager): void
     {
         $this->locationService = $locationService;
         $this->weatherServiceManager = $weatherServiceManager;
     }
-    
+
     public function mount(): void
     {
-        $this->form->fill($this->getSettingsManager()->getSettings());
         $this->loadWeather();
     }
 
-    public function form(Form $form): Form
+    public function settingsAction(): Action
     {
-        return $form
+        return Action::make('settings')
+            ->iconButton()
+            ->icon('heroicon-o-cog')
+            ->modalHeading(__('filament-weather-widget::weather.settings.title'))
+            ->modalSubmitActionLabel(__('filament-weather-widget::weather.settings.save'))
+            ->fillForm(fn (): array => $this->getSettingsManager()->getSettings())
             ->schema([
-                Forms\Components\Toggle::make('show_weather')
+                Toggle::make('show_weather')
                     ->label(__('filament-weather-widget::weather.settings.show_weather'))
                     ->default(true),
-                Forms\Components\Radio::make('location_mode')
+                Radio::make('location_mode')
                     ->label(__('filament-weather-widget::weather.settings.location_mode'))
                     ->options([
                         LocationMode::Automatic->value => __('filament-weather-widget::weather.settings.automatic'),
                         LocationMode::Manual->value => __('filament-weather-widget::weather.settings.manual'),
                     ])
                     ->default(LocationMode::Automatic->value)
-                    ->reactive(),
-                Forms\Components\TextInput::make('location')
+                    ->live(),
+                TextInput::make('location')
                     ->label(__('filament-weather-widget::weather.settings.location'))
                     ->required()
-                    ->visible(fn (Forms\Get $get) => $get('location_mode') === LocationMode::Manual->value)
-                    ->afterStateUpdated(fn () => $this->loadWeather()),
-                Forms\Components\Select::make('unit')
+                    ->visible(fn (Get $get): bool => $get('location_mode') === LocationMode::Manual->value),
+                Select::make('unit')
                     ->label(__('filament-weather-widget::weather.settings.unit'))
                     ->options([
                         TemperatureUnit::Celsius->value => __('filament-weather-widget::weather.settings.celsius'),
@@ -77,7 +80,7 @@ class WeatherWidget extends Widget implements HasForms
                     ])
                     ->default(TemperatureUnit::Celsius->value)
                     ->required(),
-                Forms\Components\Select::make('wind_unit')
+                Select::make('wind_unit')
                     ->label(__('filament-weather-widget::weather.settings.wind_unit'))
                     ->options([
                         WindUnit::Kph->value => __('filament-weather-widget::weather.settings.kph'),
@@ -86,7 +89,61 @@ class WeatherWidget extends Widget implements HasForms
                     ->default(WindUnit::Kph->value)
                     ->required(),
             ])
-            ->statePath('data');
+            ->action(function (array $data, array $arguments): void {
+                if ($arguments['reset'] ?? false) {
+                    $this->getSettingsManager()->resetSettings();
+                    $this->loadWeather();
+                    Notification::make()
+                        ->success()
+                        ->title(__('filament-weather-widget::weather.settings.reset_success'))
+                        ->send();
+                    return;
+                }
+
+                try {
+                    $this->getSettingsManager()->saveSettings($data);
+                } catch (\Throwable $e) {
+                    Log::error('Weather widget save settings failed: ' . $e->getMessage());
+                    Notification::make()
+                        ->danger()
+                        ->title(__('filament-weather-widget::weather.errors.unable_to_load'))
+                        ->send();
+                    return;
+                }
+
+                $this->loadWeather();
+            })
+            ->extraModalFooterActions(fn (Action $action): array => [
+                $action->makeModalSubmitAction('reset', arguments: ['reset' => true])
+                    ->label(__('filament-weather-widget::weather.settings.reset'))
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalDescription(__('filament-weather-widget::weather.settings.reset_confirm')),
+            ]);
+    }
+
+    #[On('updateGeolocation')]
+    public function updateGeolocation($latitude, $longitude): void
+    {
+        if (! $this->locationService->setGeolocation($latitude, $longitude)) {
+            return;
+        }
+
+        $this->clearWeatherCache();
+        $this->loadWeather();
+    }
+
+    #[On('useIpLocation')]
+    public function useIpLocation(): void
+    {
+        $this->locationService->clearGeolocation();
+        $this->clearWeatherCache();
+        $this->loadWeather();
+    }
+
+    public static function canView(): bool
+    {
+        return (bool) config('filament-weather-widget.enabled', true);
     }
 
     protected function loadWeather(): void
@@ -110,17 +167,12 @@ class WeatherWidget extends Widget implements HasForms
             });
 
             $this->errorMessage = '';
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error('Weather widget load data failed: ' . $e->getMessage());
             $this->weather = null;
             $this->errorMessage = $e->getMessage();
             Cache::forget($cacheKey);
         }
-    }
-
-    protected function getSettingsManager(): WeatherSettingsManager
-    {
-        return app(WeatherSettingsManager::class);
     }
 
     protected function clearWeatherCache(): void
@@ -133,64 +185,13 @@ class WeatherWidget extends Widget implements HasForms
         return $this->getSettingsManager()->getSettings();
     }
 
-    public function saveSettings(): void
+    protected function getSettingsManager(): WeatherSettingsManager
     {
-        $data = $this->form->getState();
-
-        try {
-            $this->getSettingsManager()->saveSettings($data);
-        } catch (\Throwable $e) {
-            Log::error('Weather widget save settings failed: ' . $e->getMessage());
-            $this->dispatch('notify', [
-                'type' => 'danger',
-                'message' => __('filament-weather-widget::weather.errors.unable_to_load'),
-            ]);
-            return;
-        }
-
-        $this->loadWeather();
-
-        $this->dispatch('close-modal', id: 'weather-settings');
-    }
-
-    public function resetConfiguration(): void
-    {
-        $this->getSettingsManager()->resetSettings();
-
-        $this->form->fill($this->getSettings());
-
-        $this->loadWeather();
-
-        $this->dispatch('notify', [
-            'type' => 'success',
-            'message' => __('filament-weather-widget::weather.settings.reset_success'),
-        ]);
-    }
-
-    public static function canView(): bool
-    {
-        return (bool) config('filament-weather-widget.enabled', true);
-    }
-
-    public function updateGeolocation($latitude, $longitude): void
-    {
-        if (! $this->locationService->setGeolocation($latitude, $longitude)) {
-            return;
-        }
-
-        $this->clearWeatherCache();
-        $this->loadWeather();
-    }
-
-    public function useIpLocation()
-    {
-        $this->locationService->clearGeolocation();
-        $this->clearWeatherCache();
-        $this->loadWeather();
+        return app(WeatherSettingsManager::class);
     }
 
     public function render(): View
     {
-        return view(static::$view);
+        return view($this->view);
     }
 }
