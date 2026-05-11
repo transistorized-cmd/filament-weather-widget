@@ -1,0 +1,57 @@
+.fi-wi-weather-body {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.fi-wi-weather-icon {
+    width: 4rem;
+    height: 4rem;
+}
+
+.fi-wi-weather-readout {
+    display: flex;
+    flex-direction: column;
+}
+
+.fi-wi-weather-temp {
+    font-size: 1.875rem;
+    font-weight: 700;
+    line-height: 1.1;
+}
+
+.fi-wi-weather-condition {
+    color: rgb(82 82 91);
+}
+
+.dark .fi-wi-weather-condition {
+    color: rgb(161 161 170);
+}
+
+.fi-wi-weather-meta {
+    margin-top: 0.75rem;
+    font-size: 0.875rem;
+    color: rgb(82 82 91);
+}
+
+.dark .fi-wi-weather-meta {
+    color: rgb(161 161 170);
+}
+
+.fi-wi-weather-error {
+    color: rgb(220 38 38);
+}
+
+.fi-wi-weather-fallback {
+    margin-top: 0.5rem;
+    color: rgb(202 138 4);
+    font-size: 0.875rem;
+}
+
+.fi-wi-weather-hidden {
+    color: rgb(82 82 91);
+}
+
+.dark .fi-wi-weather-hidden {
+    color: rgb(161 161 170);
+}

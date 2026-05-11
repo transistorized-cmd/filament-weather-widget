@@ -26,6 +26,10 @@ Homestead.json
 # Test artifacts
 .phpunit.cache/
 .phpunit.result.cache
+.playwright-mcp/
 
 # Composer lock — this is a library; consumers resolve their own
 composer.lock
+
+# Workbench transient files (the workbench/ source tree IS tracked)
+/workbench/storage/

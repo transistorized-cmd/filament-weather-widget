@@ -2,6 +2,7 @@
 
 namespace Transistorizedcmd\FilamentWeatherWidget;
 
+use Filament\Support\Assets\Css;
 use Filament\Support\Assets\Js;
 use Filament\Support\Facades\FilamentAsset;
 use GuzzleHttp\Client;
@@ -33,9 +34,9 @@ class WeatherWidgetServiceProvider extends PackageServiceProvider
         ], 'filament-weather-widget-scripts');
 
         FilamentAsset::register([
-            Js::make('weather-widget', __DIR__ . '/../resources/js/weather-widget.js')
-                ->loadedOnRequest(),
-        ]);
+            Css::make('filament-weather-widget', __DIR__ . '/../resources/css/weather-widget.css'),
+            Js::make('filament-weather-widget', __DIR__ . '/../resources/js/weather-widget.js'),
+        ], package: 'transistorizedcmd/filament-weather-widget');
 
         $this->app->singleton(WeatherServiceManager::class, function ($app) {
             $manager = new WeatherServiceManager();

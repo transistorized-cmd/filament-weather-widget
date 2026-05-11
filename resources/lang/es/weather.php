@@ -13,10 +13,10 @@ return [
         'title' => 'Configuración de Clima',
         'show_weather' => 'Mostrar Clima',
         'location_mode' => 'Localización',
-        'automatic' => 'Automàtica',
+        'automatic' => 'Automática',
         'manual' => 'Manual',
         'location' => 'Ubicación',
-        'unit' => 'Unidad de tempratura',
+        'unit' => 'Unidad de temperatura',
         'celsius' => 'Celsius',
         'fahrenheit' => 'Fahrenheit',
         'wind_unit' => 'Unidad de velocidad del viento',
@@ -29,6 +29,6 @@ return [
     ],
     'errors' => [
         'invalid_location' => 'Ubicación inválida. Por favor revisa e intenta más tarde.',
-        'unable_to_load' => 'No se pudo cargar la información. Por favor intent más tarde.',
+        'unable_to_load' => 'No se pudo cargar la información. Por favor intenta más tarde.',
     ],
 ];

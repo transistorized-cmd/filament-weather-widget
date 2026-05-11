@@ -11,6 +11,8 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Concerns\InteractsWithSchemas;
+use Filament\Schemas\Contracts\HasSchemas;
 use Filament\Widgets\Widget;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Cache;
@@ -23,9 +25,10 @@ use Transistorizedcmd\FilamentWeatherWidget\Services\LocationService;
 use Transistorizedcmd\FilamentWeatherWidget\Services\WeatherServiceManager;
 use Transistorizedcmd\FilamentWeatherWidget\Services\WeatherSettingsManager;
 
-class WeatherWidget extends Widget implements HasActions
+class WeatherWidget extends Widget implements HasActions, HasSchemas
 {
     use InteractsWithActions;
+    use InteractsWithSchemas;
 
     protected string $view = 'filament-weather-widget::weather-widget';
 
